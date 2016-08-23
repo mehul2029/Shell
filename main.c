@@ -3,6 +3,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <stdarg.h>
 
 /* Stores all the commands in input line
  * as a doubly linked list.
@@ -68,6 +70,58 @@ void free_list(node *start)
 	}
 }
 
+void save_in_history(node *start)
+{
+	/*Task to do
+	 * 1. make a history file if doesn't exist.
+	 * 2. append the link list to the file with index. 
+	 * 3. !! - run latest command
+	 * 4. !n - !(followed by number) : run this command
+	 */
+}
+
+char **get_cmd(node *start)
+{
+	int len = 0;
+	node *i = start;
+	while (i != NULL) {
+		i = i->next;
+		len++;
+	}
+
+	char **cmd = (char **)malloc(sizeof(char *)*(len + 1));
+	cmd[len] = NULL;
+	i = start;
+	int j = 0;
+	while (j < len) {
+		cmd[j] = (char *)malloc(sizeof(strlen(i->literal)));
+		strcpy(cmd[j], i->literal);
+		j++;
+		i = i->next;
+	}
+	return cmd;
+}
+
+void run_child(node *start)
+{
+	char **cmd = get_cmd(start);
+	pid_t pid;
+	/*Child process creation*/
+	pid = fork();
+	if (pid == 0) {
+		// Child process
+		execvp(*cmd, cmd);
+		printf("Child failed\n");
+		exit(1);
+	} else if (pid < 0) {
+		// Child not dilvered
+		perror("slave refused");
+		exit(1);
+	}
+	else // parent process
+		wait(NULL);
+}
+
 void termination_handler(int signum)
 {
 	printf("\n[MJ] ");
@@ -87,19 +141,23 @@ int main(void)
 		c = getchar();
 		node *start;
 		if (c == '\n') {
-			printf("[MJ] ");
 			if (input[0] != '\0') {
 				/* start points to a linked list
 				 * which contains all the tokens
 				 * seperated by spaces
 				 */
 				start = scan_input(input);
+				run_child(start);
+				/* Saves the recent command in history */
+				save_in_history(start);
+
+				/* input buffer should be empty 
+				 * and linked list should be free
+				 */
+				free_list(start);
+				memset(input, '\0', 1024);
 			}
-			/* input buffer should be empty 
-			 * and linked list should be free
-			 */
-			free_list(start);
-			memset(input, '\0', 100);
+			printf("[MJ] ");
 		}
 		else {
 			strncat(input, &c, 1);
