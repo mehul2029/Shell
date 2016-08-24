@@ -6,6 +6,10 @@
 #include <sys/wait.h>
 #include <stdarg.h>
 
+#define MAX_COMMAND_LENGTH 1000
+#define whitespace " "
+#define newline "\n"
+
 /* Stores all the commands in input line
  * as a doubly linked list.
  */
@@ -71,12 +75,33 @@ void free_list(node *start)
 
 void save_in_history(node *start)
 {
-	/* Task to do
-	 * 1. Make a history file if doesn't exist.
-	 * 2. Append the link list to the file with index.
+	/*Task to do
 	 * 3. !! - Run last command.
 	 * 4. !n - !(followed by number) : Run this command.
 	 */
+	FILE *fp = fopen("history.dat", "a+");
+	char chr;
+	chr = getc(fp);
+	/* Count number of lines. */
+	int lines = 1;
+	while(chr!=EOF)
+	{
+		if(chr == '\n')
+			lines += 1;
+		chr = getc(fp);
+	}
+	node* temp = start;
+	char buf[MAX_COMMAND_LENGTH];
+	memset(buf, '\0', strlen(buf));
+	while(temp!=NULL)
+	{
+		strncat(buf, temp->literal, strlen(temp->literal));
+		strncat(buf, whitespace, 1);
+		temp = temp->next;
+	}
+	strncat(buf, newline, 1);
+	fprintf(fp, "%d %s", lines, buf);
+	fclose(fp);
 }
 
 char **get_cmd(node *start)
