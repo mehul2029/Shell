@@ -15,8 +15,7 @@ typedef struct node {
 	char literal[100];
 }node;
 
-/* Initialize the node to default values
- */
+/* Initialize the node to default values. */
 void init_node(node *s)
 {
 	s->prev = NULL;
@@ -72,11 +71,11 @@ void free_list(node *start)
 
 void save_in_history(node *start)
 {
-	/*Task to do
-	 * 1. make a history file if doesn't exist.
-	 * 2. append the link list to the file with index. 
-	 * 3. !! - run latest command
-	 * 4. !n - !(followed by number) : run this command
+	/* Task to do
+	 * 1. Make a history file if doesn't exist.
+	 * 2. Append the link list to the file with index.
+	 * 3. !! - Run last command.
+	 * 4. !n - !(followed by number) : Run this command.
 	 */
 }
 
@@ -106,19 +105,20 @@ void run_child(node *start)
 {
 	char **cmd = get_cmd(start);
 	pid_t pid;
-	/*Child process creation*/
+	/* Child process creation. */
 	pid = fork();
 	if (pid == 0) {
-		// Child process
+		/* Child process. */
 		execvp(*cmd, cmd);
 		printf("Child failed\n");
 		exit(1);
-	} else if (pid < 0) {
-		// Child not dilvered
-		perror("slave refused");
+	}
+	else if (pid < 0) {
+		/* Child not delivered. */
+		perror("Slave refused");
 		exit(1);
 	}
-	else // parent process
+	else /* Parent process. */
 		wait(NULL);
 }
 
@@ -134,7 +134,7 @@ int main(void)
 	memset(input, '\0', 1024);
 	printf("[MJ] ");
 
-	/* If user press Ctrl+C then stop the processes */
+	/* If user press Ctrl+C then stop the processes. */
 	signal(SIGINT, termination_handler);
 
 	while(c != EOF) {
@@ -142,17 +142,17 @@ int main(void)
 		node *start;
 		if (c == '\n') {
 			if (input[0] != '\0') {
-				/* start points to a linked list
+				/* Start points to a linked list
 				 * which contains all the tokens
-				 * seperated by spaces
+				 * separated by spaces.
 				 */
 				start = scan_input(input);
 				run_child(start);
-				/* Saves the recent command in history */
+				/* Saves the recent command in history. */
 				save_in_history(start);
 
-				/* input buffer should be empty 
-				 * and linked list should be free
+				/* Input buffer should be empty
+				 * and linked list should be free.
 				 */
 				free_list(start);
 				memset(input, '\0', 1024);
