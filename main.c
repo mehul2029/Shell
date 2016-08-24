@@ -27,6 +27,7 @@ void init_node(node *s)
 	memset(s->literal, '\0', 100);
 }
 
+/*Convert the input string into a linked list seperated by " " and "|"*/
 node *scan_input(char *input)
 {
 	node *start = (node *)malloc(sizeof(node));
@@ -63,6 +64,7 @@ node *scan_input(char *input)
 	return start;
 }
 
+/*Free the memory alloted for the linked list*/
 void free_list(node *start)
 {
 	node *i = start;
@@ -104,6 +106,7 @@ void save_in_history(node *start)
 	fclose(fp);
 }
 
+/*Convert the linked list into a array of strings - cmd*/
 char **get_cmd(node *start)
 {
 	int len = 0;
@@ -126,6 +129,15 @@ char **get_cmd(node *start)
 	return cmd;
 }
 
+/* Free memory alloted for the cmd */
+void free_cmd (char **cmd)
+{
+	while(*cmd != NULL) {
+		free(cmd);
+		cmd++;
+	}
+}
+
 void run_child(node *start)
 {
 	char **cmd = get_cmd(start);
@@ -145,6 +157,8 @@ void run_child(node *start)
 	}
 	else /* Parent process. */
 		wait(NULL);
+
+	free_cmd(cmd);
 }
 
 void termination_handler(int signum)
