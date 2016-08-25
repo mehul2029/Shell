@@ -19,6 +19,21 @@ typedef struct node {
 	char literal[100];
 }node;
 
+
+/* Function signatures. */
+void init_node(node *);
+node *scan_input(char *);
+void display_history();
+void run_last_cmd();
+void run_nth_cmd(char *);
+void free_list(node *);
+void save_in_history(node *);
+char **get_cmd(node *);
+void free_cmd (char **);
+void run_child(node *);
+void termination_handler(int);
+
+
 /* Initialize the node to default values */
 void init_node(node *s)
 {
@@ -82,7 +97,77 @@ node *scan_input(char *input)
 	return start;
 }
 
-/* Free the memory alloted for the linked list */
+void display_history()
+{
+	FILE* fp;
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t read;
+	fp = fopen("history.dat", "r");
+	if (fp == NULL)
+		exit(1);
+	while ((read = getline(&line, &len, fp)) != -1) {
+		printf("%s", line);
+	}
+	fclose(fp);
+	if(line)
+		free(line);
+}
+
+void run_last_cmd()
+{
+	FILE* fp;
+	char *line1 = NULL, *line2 = NULL;
+	size_t len = 0;
+	ssize_t read;
+	fp = fopen("history.dat", "r");
+	if (fp == NULL)
+		exit(EXIT_FAILURE);
+	while ((read = getline(&line1, &len, fp)) != -1) {
+		line2 = line1;
+	}
+	node *start = (node *)malloc(sizeof(node));
+	line2[strlen(line2)-1] = '\0';
+	start = scan_input(line2);
+	start = start->next;
+	free(start->prev);
+	start->prev = NULL;
+	run_child(start);
+}
+
+void run_nth_cmd(char *buf)
+{
+	FILE* fp;
+	char *line = NULL;
+	size_t len = 0;
+	ssize_t read;
+	fp = fopen("history.dat", "r");
+	if (fp == NULL)
+		exit(EXIT_FAILURE);
+	int no_of_lines = 1;
+	/* Get the line number from buf. */
+	int buf_length = strlen(buf);
+	int i = 0, n = 0;
+	while(buf_length--) {
+		char ch = buf[i];
+		if(ch>='0' && ch<='9')
+			n = n*10 + ch - '0';
+		i++;
+	}
+	/* Read the nth command from history for execution. */
+	while (((read = getline(&line, &len, fp)) != -1) && no_of_lines < n) {
+		no_of_lines++;
+	}
+	node* start = (node*)malloc(sizeof(node));
+	line[strlen(line)-1] = '\0';
+	start = scan_input(line);
+	start = start->next;
+	free(start->prev);
+	start->prev = NULL;
+	run_child(start);
+}
+
+/* Free the memory alloted for the linked list. */
 void free_list(node *start)
 {
 	node *i = start;
@@ -95,45 +180,43 @@ void free_list(node *start)
 
 void save_in_history(node *start)
 {
-	/*Task to do
-	 * 3. !! - Run last command.
-	 * 4. !n - !(followed by number) : Run this command.
-	 */
+	/* Do not store any of the following commands. */
+	if(!strcmp(start->literal,"!!") || start->literal[0]=='!') {
+		return;
+	}
 	FILE *fp = fopen("history.dat", "a+");
 	char chr;
 	chr = getc(fp);
 	/* Count number of lines. */
-	int lines = 1;
-	while(chr!=EOF)
-	{
+	int no_of_lines = 1;
+	while(chr!=EOF) {
 		if(chr == '\n')
-			lines += 1;
+			no_of_lines += 1;
 		chr = getc(fp);
 	}
 	node* temp = start;
 	char buf[MAX_COMMAND_LENGTH];
 	memset(buf, '\0', strlen(buf));
-	while(temp!=NULL)
-	{
+	while(temp!=NULL) {
 		strncat(buf, temp->literal, strlen(temp->literal));
-		strncat(buf, whitespace, 1);
+		strncat(buf, whitespace, strlen(whitespace));
 		temp = temp->next;
 	}
 	strncat(buf, newline, 1);
-	fprintf(fp, "%d %s", lines, buf);
+	fprintf(fp, "%d %s", no_of_lines, buf);
 	fclose(fp);
 }
 
 /* Convert the linked list into a array of strings - cmd */
 char **get_cmd(node *start)
 {
+	node* temp = start;
 	int len = 0;
 	node *i = start;
 	while (i != NULL) {
 		i = i->next;
 		len++;
 	}
-
 	char **cmd = (char **)malloc(sizeof(char *)*(len + 1));
 	cmd[len] = NULL;
 	i = start;
@@ -160,22 +243,35 @@ void run_child(node *start)
 {
 	char **cmd = get_cmd(start);
 	pid_t pid;
-	/* Child process creation. */
-	pid = fork();
-	if (pid == 0) {
-		/* Child process. */
-		execvp(*cmd, cmd);
-		printf("Child failed\n");
-		exit(1);
+	/* Check if command is `history` or either of the bang commands.
+	 * If yes, run our custom implementations.
+	 */
+	if(!strcmp(start->literal, "history")) {
+		display_history();
 	}
-	else if (pid < 0) {
-		/* Child not delivered. */
-		perror("Slave refused");
-		exit(1);
+	else if(!strcmp(start->literal, "!!")) {
+		run_last_cmd();
 	}
-	else /* Parent process. */
-		wait(NULL);
-
+	else if(start->literal[0]=='!') {
+		run_nth_cmd(start->literal);
+	}
+	else {
+		/* Child process creation. */
+		pid = fork();
+		if (pid == 0) {
+			/* Child process. */
+			execvp(*cmd, cmd);
+			printf("Child failed\n");
+			exit(1);
+		}
+		else if (pid < 0) {
+			/* Child not delivered. */
+			perror("Slave refused");
+			exit(1);
+		}
+		else /* Parent process. */
+			wait(NULL);
+	}
 	free_cmd(cmd);
 }
 
