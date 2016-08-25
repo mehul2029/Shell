@@ -19,7 +19,7 @@ typedef struct node {
 	char literal[100];
 }node;
 
-/* Initialize the node to default values. */
+/* Initialize the node to default values */
 void init_node(node *s)
 {
 	s->prev = NULL;
@@ -27,20 +27,38 @@ void init_node(node *s)
 	memset(s->literal, '\0', 100);
 }
 
-/*Convert the input string into a linked list seperated by " " and "|"*/
+/* Convert the input string into a linked list seperated by " " and "|" */
 node *scan_input(char *input)
 {
 	node *start = (node *)malloc(sizeof(node));
 	init_node(start);
-	node *iterator = start;
+	node *iterator = start, *new;
 	char buffer[100];
 	memset(buffer, '\0', 100);
 
 	while (1) {
-		if ((*input == ' ' || *input == '\0') && strlen(buffer) != 0) {
+		if ((*input == ' ' || *input == '\0') 
+										&& strlen(buffer) != 0) {
 			strncpy(iterator->literal, buffer, strlen(buffer));
 			memset(buffer, '\0', strlen(buffer));
-			node *new = (node *)malloc(sizeof(node));
+			new = (node *)malloc(sizeof(node));
+			init_node(new);
+			iterator->next = new;
+			new->prev = iterator;
+			iterator = new;
+		}
+		else if (*input == '|') {
+			if (strlen(buffer) != 0) {
+				strncpy(iterator->literal, buffer, strlen(buffer));
+				memset(buffer, '\0', strlen(buffer));
+				new = (node *)malloc(sizeof(node));
+				init_node(new);
+				iterator->next = new;
+				new->prev = iterator;
+				iterator = new;
+			}
+			iterator->literal[0] = '|';
+			new = (node *)malloc(sizeof(node));
 			init_node(new);
 			iterator->next = new;
 			new->prev = iterator;
@@ -53,7 +71,7 @@ node *scan_input(char *input)
 			break;
 		input++;
 	}
-	
+
 	if (strlen(start->literal) == 0) {
 		return NULL;
 	}
@@ -64,7 +82,7 @@ node *scan_input(char *input)
 	return start;
 }
 
-/*Free the memory alloted for the linked list*/
+/* Free the memory alloted for the linked list */
 void free_list(node *start)
 {
 	node *i = start;
@@ -106,7 +124,7 @@ void save_in_history(node *start)
 	fclose(fp);
 }
 
-/*Convert the linked list into a array of strings - cmd*/
+/* Convert the linked list into a array of strings - cmd */
 char **get_cmd(node *start)
 {
 	int len = 0;
@@ -133,7 +151,7 @@ char **get_cmd(node *start)
 void free_cmd (char **cmd)
 {
 	while(*cmd != NULL) {
-		free(cmd);
+		free(*cmd);
 		cmd++;
 	}
 }
