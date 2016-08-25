@@ -52,8 +52,7 @@ node *scan_input(char *input)
 	memset(buffer, '\0', 100);
 
 	while (1) {
-		if ((*input == ' ' || *input == '\0') 
-										&& strlen(buffer) != 0) {
+		if ((*input == ' ' || *input == '\0') && strlen(buffer) != 0) {
 			strncpy(iterator->literal, buffer, strlen(buffer));
 			memset(buffer, '\0', strlen(buffer));
 			new = (node *)malloc(sizeof(node));
@@ -274,6 +273,26 @@ void run_child(node *start)
 	}
 	free_cmd(cmd);
 }
+int is_pipe(node *start)
+{
+	node *a = start;
+	int pipe = 0;
+	while(start != NULL) {
+		if (!strcmp(start->literal, "|")) {
+			printf("HERE\n");
+			if((start->prev == NULL) || (start->next == NULL))
+				return -1;
+			pipe = 1;
+		}
+		start = start->next;
+	}
+	return pipe;
+}
+
+void run_child_pipe(node *start)
+{
+	/*Run the piped commands recursively.*/
+}
 
 void termination_handler(int signum)
 {
@@ -300,7 +319,13 @@ int main(void)
 				 * separated by spaces.
 				 */
 				start = scan_input(input);
-				run_child(start);
+				int pipe = is_pipe(start);
+				if (pipe == 1)
+					run_child_pipe(start);
+				else if (pipe == 0)
+					run_child(start);
+				else
+					printf("MJ: syntax error near unexpected token '|'\n");
 				/* Saves the recent command in history. */
 				save_in_history(start);
 
