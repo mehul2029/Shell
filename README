@@ -1,0 +1,71 @@
+AADM SHELL
+
+Team Members:
+
+Aditya Divekar - 140123003
+Mehul Jain	   - 140123022
+Abheek Ghosh   - 140123
+Divye Vats	   - 140123
+
+
+Contribution from team members:
+
+1. Aditya Divekar: Implemented History feature. (History.c)
+
+2. Mehul Jain: Implemented complete structure of Shell. Implemented
+			   excecution of non-piped commands. Written documentation.
+			   (cmd.c, linkedlist.c)
+
+3. Abheek Ghosh: Implemented piped commands excecution. (cmd.c, makefile)
+
+4. Divye Vats: Helped with implementation of shell. (main.c)
+
+
+
+Basic Structure of AADM shell:
+
+1. Internally shell stores all the user input in a linked list by setting
+   delimiters as ' ' and '|'.
+
+
+
+Implementation:
+
+1. Shell uses execvp() system call to exceute commands in a child process.
+
+2. In case of pipe, a recursive approch has been choosen. 1st commands
+   is executed followed by next command and so via calling the same
+   function recursively.
+
+3. History feature is implemented by storing data in a file.
+
+
+
+Few Extra features:
+
+1. Ctrl + c stops the ongoing process and make way for shell to take
+   input again.
+
+2. "exit" kills the shell.
+
+3. Piping can be done any number of times.
+
+
+
+Limitations and Bugs:
+
+1. Few commands don't work, such as "cd".
+2. Ctrl+z doesn't work.
+3. commands like "git commit -m 'some thing'" won't work because
+   the parser in the shell will create tokens as
+   
+   			<git> <commit> <-m> <'some> <thing'>
+
+   whereas the correct sequence should be
+   			<git> <commit> <-m> <'some thing'>
+
+   This happens because delimiter is ' ' (space) and parser doesn't
+   ignore spaces after `'` character until it again sees it.
+
+4. !(some character) does not work. Eg. !g should run the last commad
+   which starts with "g".
