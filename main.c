@@ -37,7 +37,8 @@ void run_child_pipe(node *);
 void termination_handler(int);
 void command_faild();
 int is_pipe(node *);
-void run_child_pipe(node *, int, int);
+void run_child_pipe(node *, int);
+void pipe_process(node *);
 
 /* Initialize the node to default values */
 void init_node(node *s)
@@ -311,14 +312,15 @@ int is_pipe(node *start)
 }
 
 /* Run the piped commands. */
-void run_child_pipe(node *start, int pipe_input, int it)
+void run_child_pipe(node *start, int pipe_input)
 {
 	int std_input = dup(STDIN_FILENO);		// Save stdin for later use
 	int std_output = dup(STDOUT_FILENO);	// Save stdout for later use
 	int fd[2];
 	/* Forming a pipe. */
 	if(pipe(fd) < 0) {
-		//handle error
+		perror("Pipe failure.\n");
+		return;
 	}
 	/* Termination of recursive process. */
 	if(start == NULL)
@@ -352,24 +354,9 @@ void run_child_pipe(node *start, int pipe_input, int it)
 		
 		execvp(*cmd, cmd);
 		
-		if(it == 0) {
-			close(std_input);
-		} else {
-			close(fd[0]);
-			dup2(std_input, 0);		// Change stdin to normal
-		}
-
-		if(start == NULL) {
-			close(std_output);
-		} else {
-			close(fd[1]);
-			dup2(std_output, 1);		// Change stdout to normal.
-		}
-		
-
 		printf("%s: unknown command\n", cmd[0]);
 		fflush(stdout);
-		kill(ppid, SIGTERM);
+		kill(ppid, SIGINT);
 		/* should never be reached. */
 		exit(1);
 	}
@@ -381,16 +368,17 @@ void run_child_pipe(node *start, int pipe_input, int it)
 		close(std_input);
 		close(std_output);
 		close(fd[1]);
-		printf("Completed %d process.", it);
-		run_child_pipe(start, fd[0], it+1);
+		run_child_pipe(start, fd[0]);
 		close(fd[0]);
+		free_cmd(cmd);
 	}
 }
 
-void xyz(node *start)
+void pipe_process(node *start)
 {
 	int pipe_input = dup(STDIN_FILENO);	
-	run_child_pipe(start, pipe_input, 0);
+	run_child_pipe(start, pipe_input);
+	close(pipe_input);
 }
 
 void termination_handler(int signum)
@@ -434,7 +422,7 @@ int main(void)
 					exit(0);
 
 				if (pipe == 1)
-					xyz(start);
+					pipe_process(start);
 				else if (pipe == 0)
 					run_child(start);
 				else
