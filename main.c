@@ -320,6 +320,11 @@ int main(void)
 				 */
 				start = scan_input(input);
 				int pipe = is_pipe(start);
+
+				/* Exit the shell. */
+				if (!strcmp(start->literal, "exit"))
+					exit(0);
+
 				if (pipe == 1)
 					run_child_pipe(start);
 				else if (pipe == 0)
