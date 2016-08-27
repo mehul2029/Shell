@@ -142,7 +142,7 @@ void run_last_cmd()
 	else if(is_pipe(start)==0)
 		run_child(start);
 	else
-		printf("MJ: syntax error near unexpected token '|'\n");
+		printf("AADM: syntax error near unexpected token '|'\n");
 }
 
 void run_nth_cmd(char *buf)
