@@ -10,13 +10,14 @@ Divye Vats     - 140123
 
 Contribution from team members:
 
-1. Aditya Divekar: Implemented History feature. (History.c)
+1. Aditya Divekar: Implemented history feature and bang commands, Makefile.
+                  (history.c, Makefile)
 
 2. Mehul Jain: Implemented complete structure of Shell. Implemented
                excecution of non-piped commands. Written documentation.
                (cmd.c, linkedlist.c)
 
-3. Abheek Ghosh: Implemented piped commands excecution. (cmd.c, makefile)
+3. Abheek Ghosh: Implemented piped commands excecution. (cmd.c)
 
 4. Divye Vats: Helped with implementation of shell. (main.c)
 
@@ -31,7 +32,7 @@ Basic Structure of AADM shell:
 
 Implementation:
 
-1. Shell uses execvp() system call to exceute commands in a child process.
+1. Shell uses execvp() system call to execute commands in a child process.
 
 2. In case of pipe, a recursive approch has been choosen. 1st commands
    is executed followed by next command and so via calling the same
@@ -67,5 +68,8 @@ Limitations and Bugs:
    This happens because delimiter is ' ' (space) and parser doesn't
    ignore spaces after `'` character until it again sees it.
 
-4. !(some character) does not work. Eg. !g should run the last commad
+4. !(some character) does not work. Eg. !g should run the last command
    which starts with "g".
+
+5. The custom implementations of the "history" and the bang commands
+   do not work in pipeline.
