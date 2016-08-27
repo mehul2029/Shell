@@ -9,6 +9,7 @@
 #define MAX_COMMAND_LENGTH 1000
 #define whitespace " "
 #define newline "\n"
+#define CMDFAILD 1000
 
 /* Stores all the commands in input line
  * as a doubly linked list.
@@ -34,7 +35,9 @@ void run_child(node *);
 int is_pipe(node *);
 void run_child_pipe(node *);
 void termination_handler(int);
-
+void command_faild();
+int is_pipe(node *);
+void run_child_pipe(node *);
 
 /* Initialize the node to default values */
 void init_node(node *s)
@@ -227,6 +230,12 @@ char **get_cmd(node *start)
 	while (i != NULL) {
 		i = i->next;
 		len++;
+
+		/* We will break first command from nested pipe input. */
+		if ((i != NULL) && !strcmp(i->literal, "|")) {
+			// len--;
+			break;
+		}
 	}
 	char **cmd = (char **)malloc(sizeof(char *)*(len + 1));
 	cmd[len] = NULL;
@@ -292,7 +301,6 @@ int is_pipe(node *start)
 	int pipe = 0;
 	while(start != NULL) {
 		if (!strcmp(start->literal, "|")) {
-			printf("HERE\n");
 			if((start->prev == NULL) || (start->next == NULL))
 				return -1;
 			pipe = 1;
@@ -302,27 +310,100 @@ int is_pipe(node *start)
 	return pipe;
 }
 
+int fd[2];
+int save_stdin, save_stdout;
+/* Run the piped commands recursively. */
 void run_child_pipe(node *start)
 {
-	/*Run the piped commands recursively.*/
+	/* Termination of recursive process. */
+	printf("HERE1\n");
+	if (start == NULL)
+		return;
+	char **cmd = get_cmd(start);
+	
+	/* `start` points to next command of input*/
+	node *i = start;
+	while (strcmp(i->literal, "|") && (i->next != NULL))
+		i = i->next;
+	start = i->next;
+	pid_t ppid = getpid(); 			// Get parent process id
+	pid_t pid = fork(); 			// Make a child process
+printf("HERE3\n");
+	if (pid < 0)
+		perror("Child failed to born");
+	else if (pid == 0) {
+		/* Child process. */
+		printf("HERE4\n");
+		dup2(fd[1], 1);				// write fd[1] to 1 (default stdout)
+		close(fd[0]);
+		execvp(*cmd, cmd);
+		printf("%s: unknow command\n", cmd[0]);
+		// fflush(stdout);
+		kill(ppid, SIGTERM);
+		
+		/* should never be reached. */
+		exit(1);
+	}
+	else {
+		/* Parent Process. */
+		printf("HERE6\n");
+		wait(&pid);
+		printf("HERE5\n");
+		close(fd[1]);
+		dup2(save_stdout, 1);
+		dup2(save_stdin, 0);
+		dup2(fd[0], 0);
+		run_child_pipe(start);
+		close(fd[0]);
+		dup2(save_stdin, 0);
+	}
+}
+
+void xyz(node *start)
+{
+	int save_stdout = dup(STDOUT_FILENO);	// Save stdout for later use
+	int save_stdin = dup(STDIN_FILENO);		// Save stdin for later use
+	
+	/* Forming a pipe. */
+	pipe(fd);
+	pid_t pid = fork();
+
+	if (pid == 0) {
+		run_child_pipe(start);
+		printf("Exiting\n");
+		fflush(stdout);	
+		exit(1);
+	}
+	else
+		wait(NULL);
 }
 
 void termination_handler(int signum)
 {
-	printf("\n[MJ] ");
+	printf("\n[MJ]3 ");
 	fflush(stdout);
 }
 
+void command_faild()
+{
+	printf("Invalid command\n");
+	fflush(stdout);
+}
 int main(void)
 {
 	char c = '\0', input[1024];
 	memset(input, '\0', 1024);
-	printf("[MJ] ");
+	printf("[MJ]1 ");
+
+	
 
 	/* If user press Ctrl+C then stop the processes. */
 	signal(SIGINT, termination_handler);
 
-	while(c != EOF) {
+	/* Signal from child in case of invalid command. */
+	signal(SIGTERM, command_faild);
+
+	while(1) {
 		c = getchar();
 		node *start;
 		if (c == '\n') {
@@ -332,6 +413,7 @@ int main(void)
 				 * separated by spaces.
 				 */
 				start = scan_input(input);
+
 				int pipe = is_pipe(start);
 
 				/* Exit the shell. */
@@ -339,7 +421,7 @@ int main(void)
 					exit(0);
 
 				if (pipe == 1)
-					run_child_pipe(start);
+					xyz(start);
 				else if (pipe == 0)
 					run_child(start);
 				else
@@ -353,7 +435,9 @@ int main(void)
 				free_list(start);
 				memset(input, '\0', 1024);
 			}
-			printf("[MJ] ");
+			printf("[MJ]2 ");
+			close(fd[0]);
+			// printf(" :: %d\n", c);
 		}
 		else {
 			strncat(input, &c, 1);
