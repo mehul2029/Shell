@@ -31,6 +31,8 @@ void save_in_history(node *);
 char **get_cmd(node *);
 void free_cmd (char **);
 void run_child(node *);
+int is_pipe(node *);
+void run_child_pipe(node *);
 void termination_handler(int);
 
 
@@ -273,6 +275,7 @@ void run_child(node *start)
 	}
 	free_cmd(cmd);
 }
+
 int is_pipe(node *start)
 {
 	node *a = start;
