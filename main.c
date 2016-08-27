@@ -48,7 +48,7 @@ int main(void)
 				else if (pipe == 0)
 					run_cmd(start);
 				else
-					printf("MJ: syntax error near unexpected token '|'\n");
+					printf("AADM: syntax error near unexpected token '|'\n");
 				/* Saves the recent command in history. */
 				save_in_history(start);
 

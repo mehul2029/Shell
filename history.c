@@ -80,6 +80,11 @@ void run_nth_cmd(char *buf)
 	while (((read = getline(&line, &len, fp)) != -1) && no_of_lines < n) {
 		no_of_lines++;
 	}
+	if(no_of_lines<n)
+	{
+		printf("AADM: %s event not found.\n", buf);
+		return;
+	}
 	node* start = (node*)malloc(sizeof(node));
 	line[strlen(line)-1] = '\0';
 	start = scan_input(line);
@@ -93,7 +98,7 @@ void run_nth_cmd(char *buf)
 	else if(is_pipe(start)==0)
 		run_cmd(start);
 	else
-		printf("MJ: syntax error near unexpected token '|'\n");
+		printf("AADM: syntax error near unexpected token '|'\n");
 }
 
 
