@@ -133,7 +133,12 @@ void run_last_cmd()
 	start = start->next;
 	free(start->prev);
 	start->prev = NULL;
-	run_child(start);
+	if(is_pipe(start)==1)
+		run_child_pipe(start);
+	else if(is_pipe(start)==0)
+		run_child(start);
+	else
+		printf("MJ: syntax error near unexpected token '|'\n");
 }
 
 void run_nth_cmd(char *buf)
@@ -165,7 +170,12 @@ void run_nth_cmd(char *buf)
 	start = start->next;
 	free(start->prev);
 	start->prev = NULL;
-	run_child(start);
+	if(is_pipe(start)==1)
+		run_child_pipe(start);
+	else if(is_pipe(start)==0)
+		run_child(start);
+	else
+		printf("MJ: syntax error near unexpected token '|'\n");
 }
 
 /* Free the memory alloted for the linked list. */
