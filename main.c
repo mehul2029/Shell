@@ -436,7 +436,6 @@ int main(void)
 				memset(input, '\0', 1024);
 			}
 			printf("[MJ]2 ");
-			close(fd[0]);
 			// printf(" :: %d\n", c);
 		}
 		else {
