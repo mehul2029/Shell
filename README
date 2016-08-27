@@ -3,9 +3,9 @@ AADM SHELL
 Team Members:
 
 Aditya Divekar - 140123003
-Mehul Jain	   - 140123022
+Mehul Jain     - 140123022
 Abheek Ghosh   - 140123
-Divye Vats	   - 140123
+Divye Vats     - 140123
 
 
 Contribution from team members:
@@ -13,8 +13,8 @@ Contribution from team members:
 1. Aditya Divekar: Implemented History feature. (History.c)
 
 2. Mehul Jain: Implemented complete structure of Shell. Implemented
-			   excecution of non-piped commands. Written documentation.
-			   (cmd.c, linkedlist.c)
+               excecution of non-piped commands. Written documentation.
+               (cmd.c, linkedlist.c)
 
 3. Abheek Ghosh: Implemented piped commands excecution. (cmd.c, makefile)
 
