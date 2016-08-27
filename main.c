@@ -31,14 +31,11 @@ void free_list(node *);
 void save_in_history(node *);
 char **get_cmd(node *);
 void free_cmd (char **);
-void run_child(node *);
-int is_pipe(node *);
-void run_child_pipe(node *);
 void termination_handler(int);
-void command_faild();
 int is_pipe(node *);
-void run_child_pipe(node *, int);
-void pipe_process(node *);
+void run_cmd(node *);
+void run_pipe(node *, int);
+void run_pipe_cmd(node *);
 
 /* Initialize the node to default values */
 void init_node(node *s)
@@ -48,7 +45,7 @@ void init_node(node *s)
 	memset(s->literal, '\0', 100);
 }
 
-/* Convert the input string into a linked list seperated by " " and "|" */
+/* Convert the input string into a linked list; delimiters are " " and "|" */
 node *scan_input(char *input)
 {
 	node *start = (node *)malloc(sizeof(node));
@@ -102,6 +99,7 @@ node *scan_input(char *input)
 	return start;
 }
 
+/* Display history of commands exceuted. */
 void display_history()
 {
 	FILE* fp;
@@ -119,6 +117,7 @@ void display_history()
 		free(line);
 }
 
+/*!! - runs the last command given user. */
 void run_last_cmd()
 {
 	FILE* fp;
@@ -138,13 +137,17 @@ void run_last_cmd()
 	free(start->prev);
 	start->prev = NULL;
 	if(is_pipe(start)==1)
-		run_child_pipe(start);
+		run_pipe_cmd(start);
 	else if(is_pipe(start)==0)
-		run_child(start);
+		run_cmd(start);
 	else
 		printf("AADM: syntax error near unexpected token '|'\n");
 }
 
+/* When user wants to run a specific command
+ * via looking at history. !n - runs the nth
+ * indexed command.
+ */
 void run_nth_cmd(char *buf)
 {
 	FILE* fp;
@@ -174,10 +177,12 @@ void run_nth_cmd(char *buf)
 	start = start->next;
 	free(start->prev);
 	start->prev = NULL;
+	
+	/* Differentiating piped and non-piped commands. */
 	if(is_pipe(start)==1)
-		run_child_pipe(start);
+		run_pipe_cmd(start);
 	else if(is_pipe(start)==0)
-		run_child(start);
+		run_cmd(start);
 	else
 		printf("MJ: syntax error near unexpected token '|'\n");
 }
@@ -193,6 +198,7 @@ void free_list(node *start)
 	}
 }
 
+/* Saves the latest command given by user in history. */
 void save_in_history(node *start)
 {
 	/* Do not store any of the following commands. */
@@ -231,12 +237,9 @@ char **get_cmd(node *start)
 	while (i != NULL) {
 		i = i->next;
 		len++;
-
-		/* We will break first command from nested pipe input. */
-		if ((i != NULL) && !strcmp(i->literal, "|")) {
-			// len--;
+		/* We will break the first command from nested piped input. */
+		if ((i != NULL) && !strcmp(i->literal, "|"))
 			break;
-		}
 	}
 	char **cmd = (char **)malloc(sizeof(char *)*(len + 1));
 	cmd[len] = NULL;
@@ -260,10 +263,12 @@ void free_cmd (char **cmd)
 	}
 }
 
-void run_child(node *start)
+/* Run a child process for a non-piped command. */
+void run_cmd(node *start)
 {
 	char **cmd = get_cmd(start);
 	pid_t pid;
+	pid_t ppid = getpid();
 	/* Check if command is `history` or either of the bang commands.
 	 * If yes, run our custom implementations.
 	 */
@@ -282,7 +287,9 @@ void run_child(node *start)
 		if (pid == 0) {
 			/* Child process. */
 			execvp(*cmd, cmd);
-			printf("Child failed\n");
+
+			printf("%s: command not found\n", cmd[0]);
+			/* Invalid command terminates the child. */
 			exit(1);
 		}
 		else if (pid < 0) {
@@ -311,12 +318,12 @@ int is_pipe(node *start)
 	return pipe;
 }
 
-/* Run the piped commands. */
-void run_child_pipe(node *start, int pipe_input)
+/* Run the piped commands recursively. */
+void run_pipe(node *start, int pipe_input)
 {
-	int std_input = dup(STDIN_FILENO);		// Save stdin for later use
-	int std_output = dup(STDOUT_FILENO);	// Save stdout for later use
-	int fd[2];
+	int std_output = dup(STDOUT_FILENO);	// Save stdout for later use.
+	int fd[2];								// File descriptor for piping.
+
 	/* Forming a pipe. */
 	if(pipe(fd) < 0) {
 		perror("Pipe failure.\n");
@@ -336,62 +343,59 @@ void run_child_pipe(node *start, int pipe_input)
 
 	pid_t ppid = getpid(); 			// Get parent process id
 	pid_t pid = fork(); 			// Make a child process
+
 	if (pid < 0)
 		perror("Child failed to born");
 	else if (pid == 0) {
 		/* Child process. */
 
-		close(std_input);
 		close(fd[0]);
-		dup2(pipe_input, 0);			// Change stdin to pipe.
+		dup2(pipe_input, 0);		// Change stdin to pipe.
 
-		if(start == NULL) {
+		/* Close fd[1], when it's the last
+		 * command to be excecuted.
+		 */
+		if(start == NULL)
 			close(fd[1]);
-		} else {
+		else {
 			close(std_output);
 			dup2(fd[1], 1);		// Change stdout to pipe.
-		}
+		}		
 		
-		execvp(*cmd, cmd);
+		execvp(*cmd, cmd);		// Execute the commad.
 		
+		/* In case command is invalid. */
 		printf("%s: unknown command\n", cmd[0]);
 		fflush(stdout);
-		kill(ppid, SIGINT);
+
 		/* should never be reached. */
 		exit(1);
 	}
 	else {
 		/* Parent Process. */
-		wait(NULL);
-		dup2(std_input, 0);
-		dup2(std_output, 1);
-		close(std_input);
-		close(std_output);
+		wait(NULL);				// Waiting for child to stop.
 		close(fd[1]);
-		run_child_pipe(start, fd[0]);
+		run_pipe(start, fd[0]);
 		close(fd[0]);
 		free_cmd(cmd);
 	}
 }
 
-void pipe_process(node *start)
+/* Calls run_pipe to exceute piped commands recursively. */
+void run_pipe_cmd(node *start)
 {
 	int pipe_input = dup(STDIN_FILENO);	
-	run_child_pipe(start, pipe_input);
+	run_pipe(start, pipe_input);
 	close(pipe_input);
 }
 
+/* Runs when Ctrl+c is pressed. */
 void termination_handler(int signum)
 {
 	printf("\n>>  ");
 	fflush(stdout);
 }
 
-void command_faild()
-{
-	printf("Invalid command\n");
-	fflush(stdout);
-}
 int main(void)
 {
 	char c = '\0', input[1024];
@@ -400,9 +404,6 @@ int main(void)
 
 	/* If user press Ctrl+C then stop the processes. */
 	signal(SIGINT, termination_handler);
-
-	/* Signal from child in case of invalid command. */
-	signal(SIGTERM, command_faild);
 
 	while(1) {
 		c = getchar();
@@ -422,9 +423,9 @@ int main(void)
 					exit(0);
 
 				if (pipe == 1)
-					pipe_process(start);
+					run_pipe_cmd(start);
 				else if (pipe == 0)
-					run_child(start);
+					run_cmd(start);
 				else
 					printf("MJ: syntax error near unexpected token '|'\n");
 				/* Saves the recent command in history. */
