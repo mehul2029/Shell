@@ -37,7 +37,7 @@ void run_child_pipe(node *);
 void termination_handler(int);
 void command_faild();
 int is_pipe(node *);
-void run_child_pipe(node *);
+void run_child_pipe(node *, int, int);
 
 /* Initialize the node to default values */
 void init_node(node *s)
@@ -310,15 +310,20 @@ int is_pipe(node *start)
 	return pipe;
 }
 
-int fd[2];
-int save_stdin, save_stdout;
-/* Run the piped commands recursively. */
-void run_child_pipe(node *start)
+/* Run the piped commands. */
+void run_child_pipe(node *start, int pipe_input, int it)
 {
+	int std_input = dup(STDIN_FILENO);		// Save stdin for later use
+	int std_output = dup(STDOUT_FILENO);	// Save stdout for later use
+	int fd[2];
+	/* Forming a pipe. */
+	if(pipe(fd) < 0) {
+		//handle error
+	}
 	/* Termination of recursive process. */
-	printf("HERE1\n");
-	if (start == NULL)
+	if(start == NULL)
 		return;
+
 	char **cmd = get_cmd(start);
 	
 	/* `start` points to next command of input*/
@@ -326,61 +331,71 @@ void run_child_pipe(node *start)
 	while (strcmp(i->literal, "|") && (i->next != NULL))
 		i = i->next;
 	start = i->next;
+
 	pid_t ppid = getpid(); 			// Get parent process id
 	pid_t pid = fork(); 			// Make a child process
-printf("HERE3\n");
 	if (pid < 0)
 		perror("Child failed to born");
 	else if (pid == 0) {
 		/* Child process. */
-		printf("HERE4\n");
-		dup2(fd[1], 1);				// write fd[1] to 1 (default stdout)
+
+		close(std_input);
 		close(fd[0]);
-		execvp(*cmd, cmd);
-		printf("%s: unknow command\n", cmd[0]);
-		// fflush(stdout);
-		kill(ppid, SIGTERM);
+		dup2(pipe_input, 0);			// Change stdin to pipe.
+
+		if(start == NULL) {
+			close(fd[1]);
+		} else {
+			close(std_output);
+			dup2(fd[1], 1);		// Change stdout to pipe.
+		}
 		
+		execvp(*cmd, cmd);
+		
+		if(it == 0) {
+			close(std_input);
+		} else {
+			close(fd[0]);
+			dup2(std_input, 0);		// Change stdin to normal
+		}
+
+		if(start == NULL) {
+			close(std_output);
+		} else {
+			close(fd[1]);
+			dup2(std_output, 1);		// Change stdout to normal.
+		}
+		
+
+		printf("%s: unknown command\n", cmd[0]);
+		fflush(stdout);
+		kill(ppid, SIGTERM);
 		/* should never be reached. */
 		exit(1);
 	}
 	else {
 		/* Parent Process. */
-		printf("HERE6\n");
-		wait(&pid);
-		printf("HERE5\n");
+		wait(NULL);
+		dup2(std_input, 0);
+		dup2(std_output, 1);
+		close(std_input);
+		close(std_output);
 		close(fd[1]);
-		dup2(save_stdout, 1);
-		dup2(save_stdin, 0);
-		dup2(fd[0], 0);
-		run_child_pipe(start);
+		printf("Completed %d process.", it);
+		run_child_pipe(start, fd[0], it+1);
 		close(fd[0]);
-		dup2(save_stdin, 0);
 	}
 }
 
 void xyz(node *start)
 {
-	int save_stdout = dup(STDOUT_FILENO);	// Save stdout for later use
-	int save_stdin = dup(STDIN_FILENO);		// Save stdin for later use
-	
-	/* Forming a pipe. */
-	pipe(fd);
-	pid_t pid = fork();
-
-	if (pid == 0) {
-		run_child_pipe(start);
-		printf("Exiting\n");
-		fflush(stdout);	
-		exit(1);
-	}
-	else
-		wait(NULL);
+	int pipe_input = dup(STDIN_FILENO);	
+	run_child_pipe(start, pipe_input, 0);
 }
 
 void termination_handler(int signum)
 {
-	printf("\n[MJ]3 ");
+	printf("\n>>  ");
 	fflush(stdout);
 }
 
@@ -393,9 +408,7 @@ int main(void)
 {
 	char c = '\0', input[1024];
 	memset(input, '\0', 1024);
-	printf("[MJ]1 ");
-
-	
+	printf(">> ");
 
 	/* If user press Ctrl+C then stop the processes. */
 	signal(SIGINT, termination_handler);
@@ -435,7 +448,7 @@ int main(void)
 				free_list(start);
 				memset(input, '\0', 1024);
 			}
-			printf("[MJ]2 ");
+			printf(">> ");
 			// printf(" :: %d\n", c);
 		}
 		else {
