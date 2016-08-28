@@ -10,8 +10,9 @@ Divye Vats     - 140123
 
 Contribution from team members:
 
-1. Aditya Divekar: Implemented history feature and bang commands, Makefile.
-                  (history.c, Makefile)
+1. Aditya Divekar: Implemented history feature, and bang commands, Makefile.
+                  Implemented builtin function "cd".
+                  (history.c, builtin.c, Makefile)
 
 2. Mehul Jain: Implemented complete structure of Shell. Implemented
                excecution of non-piped commands. Written documentation.
@@ -55,9 +56,8 @@ Few Extra features:
 
 Limitations and Bugs:
 
-1. Few commands don't work, such as "cd".
-2. Ctrl+z doesn't work.
-3. commands like "git commit -m 'some thing'" won't work because
+1. Ctrl+z doesn't work.
+2. commands like "git commit -m 'some thing'" won't work because
    the parser in the shell will create tokens as
    
    			<git> <commit> <-m> <'some> <thing'>
@@ -68,8 +68,8 @@ Limitations and Bugs:
    This happens because delimiter is ' ' (space) and parser doesn't
    ignore spaces after `'` character until it again sees it.
 
-4. !(some character) does not work. Eg. !g should run the last command
+3. !(some character) does not work. Eg. !g should run the last command
    which starts with "g".
 
-5. The custom implementations of the "history" and the bang commands
+4. The custom implementations of the "history" and the bang commands
    do not work in pipeline.
