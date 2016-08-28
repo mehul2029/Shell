@@ -9,12 +9,12 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+/* Implementation of "cd" using chdir. */
 void run_cd(char *path)
 {
 	char abs_path[MAX_PATH_LENGTH];
 	/* Check if user wants to switch to home directory. */
-	if(path[0]=='_')
-	{
+	if(path[0]=='_') {
 		const char *homedir;
 		if ((homedir = getenv("HOME")) == NULL) {
 			homedir = getpwuid(getuid())->pw_dir;
@@ -22,11 +22,9 @@ void run_cd(char *path)
 		chdir(homedir);
 		getcwd(abs_path, sizeof(abs_path));
 	}
-	else
-	{
+	else {
 		/* Check if user provided path is absolute or relative. */
-		if(path[0]!='/')
-		{
+		if(path[0]!='/') {
 			getcwd(abs_path, sizeof(abs_path));
 			strcat(abs_path, "/");
 			strcat(abs_path, path);

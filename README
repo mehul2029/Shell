@@ -4,23 +4,23 @@ Team Members:
 
 Aditya Divekar - 140123003
 Mehul Jain     - 140123022
-Abheek Ghosh   - 140123
-Divye Vats     - 140123
+Abheek Ghosh   - 140123047
+Divye Vats     - 140123049
 
 
 Contribution from team members:
 
 1. Aditya Divekar: Implemented history feature, and bang commands, Makefile.
-                  Implemented builtin function "cd".
-                  (history.c, builtin.c, Makefile)
+                   Implemented builtin function "cd".
+                   (history.c, builtin.c, Makefile)
 
 2. Mehul Jain: Implemented complete structure of Shell. Implemented
                excecution of non-piped commands. Written documentation.
-               (cmd.c, linkedlist.c)
+               (cmd.c, linkedlist.c, main.c)
 
 3. Abheek Ghosh: Implemented piped commands excecution. (cmd.c)
 
-4. Divye Vats: Helped with implementation of shell. (main.c)
+4. Divye Vats: Helped with implementation of shell.
 
 
 
@@ -57,7 +57,8 @@ Few Extra features:
 Limitations and Bugs:
 
 1. Ctrl+z doesn't work.
-2. commands like "git commit -m 'some thing'" won't work because
+
+2. Commands like "git commit -m 'some thing'" won't work because
    the parser in the shell will create tokens as
    
    			<git> <commit> <-m> <'some> <thing'>
@@ -73,3 +74,10 @@ Limitations and Bugs:
 
 4. The custom implementations of the "history" and the bang commands
    do not work in pipeline.
+
+5. Auto-complete feature is not there.
+
+6. Arrow keys doesn't works.
+
+
+* Code base follow K & R indent style.
