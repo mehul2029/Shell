@@ -15,5 +15,6 @@
 #define MAX_PATH_LENGTH 1000
 
 void run_cd(char *);
+int cd_helper(char *, int);
 
 #endif
