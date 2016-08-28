@@ -11,6 +11,7 @@
 
 #include "history.h"
 #include "linkedlist.h"
+#include "builtin.h"
 
 char **get_cmd(node *);
 void free_cmd (char **);

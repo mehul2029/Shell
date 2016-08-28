@@ -61,6 +61,12 @@ void run_cmd(node *start)
 	else if(start->literal[0]=='!') {
 		run_nth_cmd(start->literal);
 	}
+	else if(!strcmp(start->literal,"cd")) {
+		if(start->next==NULL)
+			run_cd("_");
+		else
+			run_cd(start->next->literal);
+	}
 	else {
 		/* Child process creation. */
 		pid = fork();
