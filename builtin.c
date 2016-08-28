@@ -9,6 +9,8 @@
 #include <sys/types.h>
 #include <pwd.h>
 
+#define MAX_PATH_LENGTH 1000
+
 /* Implementation of "cd" using chdir. */
 void run_cd(char *path)
 {
