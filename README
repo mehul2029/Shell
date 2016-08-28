@@ -1,20 +1,24 @@
 AADM SHELL
+==========
 
 How to run:
+-----------
 
 (i) Go to directory and type "make" in the terminal
 (ii) Type "./shell" in the terminal
 
 
 Team Members:
+-------------
 
 Aditya Divekar - 140123003
 Mehul Jain     - 140123022
 Abheek Ghosh   - 140123047
-Divye Vats     - 140123049
+Divaye Vats    - 140123049
 
 
 Contribution from team members:
+-------------------------------
 
 1. Aditya Divekar: Implemented history feature, and bang commands, Makefile.
                    Implemented builtin function "cd".
@@ -22,15 +26,16 @@ Contribution from team members:
 
 2. Mehul Jain: Implemented complete structure of Shell. Implemented
                excecution of non-piped commands. Written documentation.
-               (cmd.c, linkedlist.c, main.c)
+               Helped with "cd" command implementation.
+               (cmd.c, linkedlist.c, main.c, builtin.c)
 
 3. Abheek Ghosh: Implemented piped commands excecution. (cmd.c)
 
-4. Divye Vats: Helped with implementation of shell.
-
+4. Divyae Vats: Helped with implementation of shell.
 
 
 Basic Structure of AADM shell:
+------------------------------
 
 1. Internally shell stores all the user input in a linked list by setting
    delimiters as ' ' and '|'.
@@ -38,6 +43,7 @@ Basic Structure of AADM shell:
 
 
 Implementation:
+---------------
 
 1. Shell uses execvp() system call to execute commands in a child process.
 
@@ -50,6 +56,7 @@ Implementation:
 
 
 Few Extra features:
+-------------------
 
 1. Ctrl + c stops the ongoing process and make way for shell to take
    input again.
@@ -61,6 +68,7 @@ Few Extra features:
 
 
 Limitations and Bugs:
+---------------------
 
 1. Ctrl+z doesn't work.
 

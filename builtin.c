@@ -28,16 +28,7 @@ void run_cd(char *path)
 		/* Parent process. */
 		int child_error;
 		wait(&child_error);
-
-		if (child_error == -1000) {
-			/* If user goes in or above "/home/" directory. */
-			printf("AADM: Access denied\n");
-		}
-		else if (child_error) {
-			/* In case chdir fails. */
-			printf("AADM: %s: no such file or directory.\n", path);
-		}
-		else
+		if(child_error==0)
 			cd_helper(path, 1);
 	}
 }
@@ -46,13 +37,16 @@ int cd_helper(char *path, int print)
 {
 	int error = 0;
 	char abs_path[MAX_PATH_LENGTH];
+	char cwd[MAX_PATH_LENGTH];
+	getcwd(cwd, sizeof(cwd));
 	/* Check if user wants to switch to home directory. */
+	const char *home;
+	if ((home = getenv("HOME")) == NULL) {
+		home = getpwuid(getuid())->pw_dir;
+	}
 	if(path[0]=='_') {
-		const char *homedir;
-		if ((homedir = getenv("HOME")) == NULL) {
-			homedir = getpwuid(getuid())->pw_dir;
-		}
-		error = chdir(homedir);
+		error = chdir(home);
+		getcwd(abs_path, sizeof(abs_path));
 		if (print)
 			printf("%s\n", abs_path);
 	}
@@ -66,15 +60,18 @@ int cd_helper(char *path, int print)
 		else
 			strcpy(abs_path, path);
 		error = chdir(abs_path);
-
+		getcwd(abs_path, sizeof(abs_path));
 		if (print)
 			printf("%s\n", abs_path);
 	}
-
-	/* Adiya, do this:
-	 * pwd should have a sub-string "/home/user" here user can be mj or so.
-	 * program terminate on "/"
-	 * if not, then set error = -1000
-	*/
+	/* Check if the user tries to go below the home directory. */
+	if(strstr(abs_path, home)==NULL) {
+		printf("AADM: Access denied. Cannot go above user directory.\n");
+		error = 1;
+	}
+	/* Check if the user tries to `cd` into an invalid directory. */
+	else if(error!=0) {
+		printf("AADM: %s: no such file or directory.\n", path);
+	}
 	return error;
 }
